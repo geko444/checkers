@@ -14,6 +14,7 @@ class Board:
         self.turn = 1
         self.repeat = 0
         self.history = []
+        self.p_dict = {-1: 'B', 1: 'W'}
 
     def export_board(self):
         return [self.piece_at_num(n) for n in range(1, 33)]
@@ -59,12 +60,14 @@ class Board:
 
     def state(self):
         board = self.export_board()
-        if board.count(1) + board.count(2) == 0:
-            return 'B'
-        elif board.count(-1) + board.count(-2) == 0:
-            return 'W'
-        else:
-            return 'P'
+        for i in [-1, 1]:
+            if board.count(i) + board.count(i*2) == 0:
+                return self.p_dict[i*-1]
+        if self.repeat == 0:
+            if len(self.possible_moves(self.turn)) == 0:
+                return self.p_dict[self.turn*-1]
+        return 'P'
+
 
     def piece_at_num(self, n):
         i,j = self.num_to_pos(n)
@@ -175,7 +178,10 @@ class Board:
         assert move in possible
         move_type = self.move_piece(move[0], move[1])
         crowned = self.king_pieces()
-        self.history.append(move)
+        if multi == 0:
+            self.history.append(move)
+        else:
+                self.history[-1] += (move[1],)
         if move_type == 'J' and crowned == 0 and len(self.jumps_possible_at_num(move[1], 1)) > 0:
             self.repeat = 1
         else:
@@ -184,11 +190,10 @@ class Board:
 
     def human_player_turn(self, multi=0):
         multi = self.repeat
-        p_dict = {-1: 'B', 1: 'W'}
         self.print_grid()
         while True:
             try:
-                inp = ast.literal_eval(input('{} --> '.format(p_dict[self.turn])))
+                inp = ast.literal_eval(input('{} --> '.format(self.p_dict[self.turn])))
                 self.move(inp, multi)
                 break
             except SyntaxError:
@@ -205,9 +210,8 @@ class Board:
 
     def random_player_turn(self, multi=0):
         multi = self.repeat
-        p_dict = {-1: 'B', 1: 'W'}
         self.print_grid()
-        print("{}'s turn.".format(p_dict[self.turn]))
+        print("{}'s turn.".format(self.p_dict[self.turn]))
         print(' ')
         possible = self.possible_moves(self.turn, multi)
         turn = random.choice(possible)
